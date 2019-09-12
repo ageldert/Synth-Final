@@ -18,7 +18,15 @@
 
 // **--0x7F1F--**
 
-// **--0x0F1F--**
+// --- Plugin Variables controlID Enumeration 
+
+enum controlID {
+	masterPitchBend = 9,
+	masterTune = 19,
+	masterVolume_dB = 29
+};
+
+	// **--0x0F1F--**
 
 /**
 
@@ -109,6 +117,12 @@ public:
 
 private:
 	//  **--0x07FD--**
+
+	// --- Continuous Plugin Variables 
+	double masterPitchBend = 0.0;
+	double masterTune = 0.0;
+	double masterVolume_dB = 0.0;
+
 
 	// **--0x1A7F--**
     // --- end member variables

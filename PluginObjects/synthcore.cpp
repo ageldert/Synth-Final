@@ -313,6 +313,9 @@ SynthEngine::SynthEngine()
 	// --- kEG1_Normal -> kDCA_EGMod
 	parameters.setMM_HardwiredRouting(kEG1_Normal, kDCA_EGMod);
 	
+	// --- put in example hardwired routing
+	parameters.setMM_HardwiredRouting(kLFO1_Normal, kOsc1_fo);
+
 	// --- EG2 -> Filter 1 (and 2) Fc ??
 
 	// --- EG3 -> Wave Morph??

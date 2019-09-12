@@ -65,8 +65,51 @@ bool PluginCore::initPluginParameters()
     // --- Add your plugin parameter instantiation code bewtween these hex codes
 	// **--0xDEA7--**
 
-    
-    
+
+	// --- Declaration of Plugin Parameter Objects 
+	PluginParameter* piParam = nullptr;
+
+	// --- continuous control: PB Range
+	piParam = new PluginParameter(controlID::masterPitchBend, "PB Range", "semi", controlVariableType::kDouble, 1.000000, 24.000000, 7.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&masterPitchBend, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: Master Tune
+	piParam = new PluginParameter(controlID::masterTune, "Master Tune", "semi", controlVariableType::kDouble, -12.000000, 12.000000, 0.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&masterTune, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: Master Volume
+	piParam = new PluginParameter(controlID::masterVolume_dB, "Master Volume", "dB", controlVariableType::kDouble, -60.000000, 12.000000, -3.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&masterVolume_dB, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- Aux Attributes
+	AuxParameterAttribute auxAttribute;
+
+	// --- RAFX GUI attributes
+	// --- controlID::masterPitchBend
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::masterPitchBend, auxAttribute);
+
+	// --- controlID::masterTune
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::masterTune, auxAttribute);
+
+	// --- controlID::masterVolume_dB
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::masterVolume_dB, auxAttribute);
+
+
 	// **--0xEDA5--**
    
     // --- BONUS Parameter
@@ -146,11 +189,22 @@ bool PluginCore::preProcessAudioBuffers(ProcessBufferInfo& processInfo)
 void PluginCore::updateParameters() 
 {
 	SynthEngineParameters engineParams = synthEngine.getParameters();
-	// --- collect GUI control update values 
 
+	// --- collect GUI control update values
+	engineParams.masterPitchBendSensCoarse = (unsigned int)masterPitchBend; // --- this is pitch bend max range in semitones
+	engineParams.masterPitchBendSensFine = (unsigned int)(100.0*(masterPitchBend - engineParams.masterPitchBendSensCoarse)); // this is pitch bend max range in semitones
 
+	// --- create two tuning offsets from one master tune value
+	engineParams.masterTuningCoarse = (int)masterTune;
+	engineParams.masterTuningFine = (int)(100.0*(masterTune - engineParams.masterTuningCoarse)); // --- get fraction and convert to cents (1/100th of a semitone)
+
+	// --- Master Volume
+	engineParams.masterVolume_dB = masterVolume_dB;
 
    // --- THE update - this trickles all param updates   //                  via the setParameters( ) of each  synthEngine.setParameters(engineParams); 
+
+	synthEngine.setParameters(engineParams);
+
 }
 
 /**
@@ -468,6 +522,19 @@ NOTES:
 bool PluginCore::initPluginPresets()
 {
 	// **--0xFF7A--**
+
+	// --- Plugin Presets 
+	int index = 0;
+	PresetInfo* preset = nullptr;
+
+	// --- Preset: Factory Preset
+	preset = new PresetInfo(index++, "Factory Preset");
+	initPresetParameters(preset->presetParameters);
+	setPresetParameter(preset->presetParameters, controlID::masterPitchBend, 7.000000);
+	setPresetParameter(preset->presetParameters, controlID::masterTune, 0.000000);
+	setPresetParameter(preset->presetParameters, controlID::masterVolume_dB, -3.000000);
+	addPreset(preset);
+
 
 	// **--0xA7FF--**
 

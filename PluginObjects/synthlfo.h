@@ -39,7 +39,7 @@ struct SynthLFOParameters
 	LFOWaveform waveform = LFOWaveform::kTriangle;
 	LFOMode mode = LFOMode::kSync;
 
-	double frequency_Hz = 0.0;
+	double frequency_Hz = 0.5;
 	double outputAmplitude = 1.0;
 };
 
