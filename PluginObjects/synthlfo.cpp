@@ -1,6 +1,8 @@
 #include "synthlfo.h"
 
-
+/**
+\brief runs priority modulators and updates
+*/
 bool SynthLFO::update(bool updateAllModRoutings)
 {
 	// --- Run priority modulators 
@@ -9,11 +11,20 @@ bool SynthLFO::update(bool updateAllModRoutings)
 	if (!updateAllModRoutings)
 		return true;
 
-	phaseInc = parameters->frequency_Hz / sampleRate;
+	phaseInc = parameters->frequency_Hz / sampleRate;	///< updates phaseInc to frequency / sample rate
 
 	return true;
 }
 
+
+/**
+\ModOutputData renderModulatorOutput()
+\ingroup SynthFunctions
+\brief returns ModOutputData struct containing LFO output
+Checks and wraps modulo first
+Returns output of all modulators, processing based on LFOWaveform and LFOOutput
+Advances modulo every function call
+*/
 const ModOutputData SynthLFO::renderModulatorOutput()
 {
 	// --- setup for output
@@ -22,6 +33,18 @@ const ModOutputData SynthLFO::renderModulatorOutput()
 
 	if (renderComplete)
 	{
+		return lfoOutputData;
+	}
+
+	lfo1_timer.advanceTimer();
+	if (lfo1_timer.timerExpired())
+	{
+		rampAmp += rampInc;
+		if (rampAmp > 1.0) rampAmp = 1.0;
+	}
+
+	if (!lfo1_timer.timerExpired() && parameters->mode != LFOMode::kFreeRun)	// if we are waiting to oscillate
+	{							
 		return lfoOutputData;
 	}
 
@@ -34,10 +57,10 @@ const ModOutputData SynthLFO::renderModulatorOutput()
 	}
 
 	// --- QP output always follows location of current modulo; first set equal
-	modCounterQP = modCounter;
+	modCounterQP = modCounter;	///< Quad Phase first follows current modulo
 
 	// --- then, advance modulo by quadPhaseInc = 0.25 = 90 degrees, AND wrap if needed
-	advanceAndCheckWrapModulo(modCounterQP, 0.25);
+	advanceAndCheckWrapModulo(modCounterQP, 0.25); ///< Quad Phase then advances by 90 degrees, wrapping if needed
 
 	// --- calculate the oscillator value
 	if (parameters->waveform == LFOWaveform::kSin)
@@ -115,10 +138,15 @@ const ModOutputData SynthLFO::renderModulatorOutput()
 		lfoOutputData.modulationOutputs[kLFOQuadPhaseOutput] = randomSHValue;
 	}
 
-
 	// --- scale by amplitude
-	lfoOutputData.modulationOutputs[kLFONormalOutput] *= parameters->outputAmplitude;
-	lfoOutputData.modulationOutputs[kLFOQuadPhaseOutput] *= parameters->outputAmplitude;
+	lfoOutputData.modulationOutputs[kLFONormalOutput] *= parameters->outputAmplitude * rampAmp;
+	lfoOutputData.modulationOutputs[kLFOQuadPhaseOutput] *= parameters->outputAmplitude * rampAmp;
+
+	if (!lfo1_timer.timerExpired())	// if we are waiting to oscillate
+	{
+		lfoOutputData.modulationOutputs[kLFONormalOutput] = 0.0;
+		lfoOutputData.modulationOutputs[kLFOQuadPhaseOutput] = 0.0;
+	}
 
 	// --- invert two main outputs to make the opposite versions, scaling carries over
 	lfoOutputData.modulationOutputs[kLFONormalOutputInverted] = -lfoOutputData.modulationOutputs[kLFONormalOutput];
@@ -140,9 +168,5 @@ const ModOutputData SynthLFO::renderModulatorOutput()
 	// --- setup for next sample period
 	advanceModulo(modCounter, phaseInc);
 
-	// --- scale by amplituded
 	return lfoOutputData;
 }
-
-
-

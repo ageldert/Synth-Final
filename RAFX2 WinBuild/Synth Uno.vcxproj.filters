@@ -173,6 +173,12 @@
     <ClInclude Include="..\PluginObjects\window_eg.h">
       <Filter>PluginObjects</Filter>
     </ClInclude>
+    <ClInclude Include="..\PluginObjects\wavetable.h">
+      <Filter>PluginObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PluginObjects\analog_square_1.h">
+      <Filter>PluginObjects</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Resources\PluginGUI.uidesc">
@@ -183,5 +189,10 @@
     <ResourceCompile Include="PluginGUIMain.rc">
       <Filter>Resources</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\docs\AddingDoxygenSupport.txt" />
+    <Text Include="..\docs\mainpage.txt" />
+    <Text Include="..\docs\oscillators.txt" />
   </ItemGroup>
 </Project>

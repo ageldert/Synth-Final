@@ -90,6 +90,39 @@ bool PluginCore::initPluginParameters()
 	piParam->setBoundVariable(&masterVolume_dB, boundVariableType::kDouble);
 	addPluginParameter(piParam);
 
+	// --- discrete control: LFO1 Wave
+	piParam = new PluginParameter(controlID::lfo1Waveform, "LFO1 Wave", "Triangle,Sin,Saw,RSH,QRSH,Noise,QRNoise", "Triangle");
+	piParam->setBoundVariable(&lfo1Waveform, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: LFO1 Mode
+	piParam = new PluginParameter(controlID::lfo1Mode, "LFO1 Mode", "Sync,One Shot,Free Run", "Sync");
+	piParam->setBoundVariable(&lfo1Mode, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- continuous control: LFO1 Fo
+	piParam = new PluginParameter(controlID::lfo1Frequency_Hz, "LFO1 Fo", "Hz", controlVariableType::kDouble, 0.020000, 30.000000, 0.500000, taper::kVoltOctaveTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&lfo1Frequency_Hz, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: LFO1 Dly
+	piParam = new PluginParameter(controlID::lfo1DelayTime_mSec, "LFO1 Dly", "mSec", controlVariableType::kDouble, 0.000000, 2000.000000, 0.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&lfo1DelayTime_mSec, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: LFO1 Ramp
+	piParam = new PluginParameter(controlID::lfo1RampTime_mSec, "LFO1 Ramp", "mSec", controlVariableType::kDouble, 0.000000, 2000.000000, 0.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&lfo1RampTime_mSec, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
 	// --- Aux Attributes
 	AuxParameterAttribute auxAttribute;
 
@@ -108,6 +141,31 @@ bool PluginCore::initPluginParameters()
 	auxAttribute.reset(auxGUIIdentifier::guiControlData);
 	auxAttribute.setUintAttribute(2147483648);
 	setParamAuxAttribute(controlID::masterVolume_dB, auxAttribute);
+
+	// --- controlID::lfo1Waveform
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(805306368);
+	setParamAuxAttribute(controlID::lfo1Waveform, auxAttribute);
+
+	// --- controlID::lfo1Mode
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(805306368);
+	setParamAuxAttribute(controlID::lfo1Mode, auxAttribute);
+
+	// --- controlID::lfo1Frequency_Hz
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::lfo1Frequency_Hz, auxAttribute);
+
+	// --- controlID::lfo1DelayTime_mSec
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::lfo1DelayTime_mSec, auxAttribute);
+
+	// --- controlID::lfo1RampTime_mSec
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::lfo1RampTime_mSec, auxAttribute);
 
 
 	// **--0xEDA5--**
@@ -201,7 +259,15 @@ void PluginCore::updateParameters()
 	// --- Master Volume
 	engineParams.masterVolume_dB = masterVolume_dB;
 
-   // --- THE update - this trickles all param updates   //                  via the setParameters( ) of each  synthEngine.setParameters(engineParams); 
+	// --- LFO 1 Parameters
+	engineParams.voiceParameters->lfo1Parameters->frequency_Hz = lfo1Frequency_Hz;
+	engineParams.voiceParameters->lfo1Parameters->waveform = convertIntToEnum(lfo1Waveform, LFOWaveform);
+	engineParams.voiceParameters->lfo1Parameters->mode = convertIntToEnum(lfo1Mode, LFOMode);
+	engineParams.voiceParameters->lfo1Parameters->delay_mSec = lfo1DelayTime_mSec;
+	engineParams.voiceParameters->lfo1Parameters->rampTime_mSec = lfo1RampTime_mSec;
+
+   // --- THE update - this trickles all param updates   
+   //                  via the setParameters( ) of each  synthEngine.setParameters(engineParams); 
 
 	synthEngine.setParameters(engineParams);
 
@@ -533,6 +599,11 @@ bool PluginCore::initPluginPresets()
 	setPresetParameter(preset->presetParameters, controlID::masterPitchBend, 7.000000);
 	setPresetParameter(preset->presetParameters, controlID::masterTune, 0.000000);
 	setPresetParameter(preset->presetParameters, controlID::masterVolume_dB, -3.000000);
+	setPresetParameter(preset->presetParameters, controlID::lfo1Waveform, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::lfo1Mode, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::lfo1Frequency_Hz, 0.500000);
+	setPresetParameter(preset->presetParameters, controlID::lfo1DelayTime_mSec, 0.000000);
+	setPresetParameter(preset->presetParameters, controlID::lfo1RampTime_mSec, 0.000000);
 	addPreset(preset);
 
 

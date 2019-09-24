@@ -23,15 +23,17 @@
 enum controlID {
 	masterPitchBend = 9,
 	masterTune = 19,
-	masterVolume_dB = 29
+	masterVolume_dB = 29,
+	lfo1Waveform = 40,
+	lfo1Mode = 41,
+	lfo1Frequency_Hz = 42,
+	lfo1DelayTime_mSec = 43,
+	lfo1RampTime_mSec = 44
 };
 
 	// **--0x0F1F--**
 
 /**
-
-HOMEWORK: make git repository for this synth project, practice editing from computer and online
-
 \class PluginCore
 \ingroup ASPiK-Core
 \brief
@@ -110,6 +112,7 @@ public:
 	// --- BEGIN USER VARIABLES AND FUNCTIONS -------------------------------------- //
 	//	   Add your variables and methods here
 	SynthEngine synthEngine;
+
 	void updateParameters();
 
 
@@ -122,7 +125,16 @@ private:
 	double masterPitchBend = 0.0;
 	double masterTune = 0.0;
 	double masterVolume_dB = 0.0;
+	double lfo1Frequency_Hz = 0.0;
+	double lfo1DelayTime_mSec = 0.0;
+	double lfo1RampTime_mSec = 0.0;
 
+	// --- Discrete Plugin Variables 
+	int lfo1Waveform = 0;
+	enum class lfo1WaveformEnum { Triangle,Sin,Saw,RSH,QRSH,Noise,QRNoise };	// to compare: if(compareEnumToInt(lfo1WaveformEnum::Triangle, lfo1Waveform)) etc... 
+
+	int lfo1Mode = 0;
+	enum class lfo1ModeEnum { Sync,One_Shot,Free_Run };	// to compare: if(compareEnumToInt(lfo1ModeEnum::Sync, lfo1Mode)) etc... 
 
 	// **--0x1A7F--**
     // --- end member variables
