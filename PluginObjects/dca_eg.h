@@ -139,7 +139,7 @@ enum {
 // --- strongly typed enum for trivial oscillator type & mode
 enum class egTCMode { kAnalog, kDigital };
 enum class egState { kOff, kDelay, kAttack, kDecay, kSustain, kRelease, kShutdown, kHoldOn, kHoldOff };
-enum class egType { kADSR, kAHDSR, kAHR };
+enum class egType { kADSR, kAHDSR, kAHR, kAHR_RT };
 
 /**
 \struct EGParameters

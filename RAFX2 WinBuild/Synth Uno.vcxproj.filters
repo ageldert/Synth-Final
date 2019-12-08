@@ -87,6 +87,9 @@
     <ClCompile Include="..\PluginObjects\window_eg.cpp">
       <Filter>PluginObjects</Filter>
     </ClCompile>
+    <ClCompile Include="..\PluginObjects\wankelrotor.cpp">
+      <Filter>PluginObjects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\RAFX2 Source\RackAFXDLL.h">
@@ -177,6 +180,36 @@
       <Filter>PluginObjects</Filter>
     </ClInclude>
     <ClInclude Include="..\PluginObjects\analog_square_1.h">
+      <Filter>PluginObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PluginObjects\wavetables\e_organ.h">
+      <Filter>PluginObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PluginObjects\wavetablebank.h">
+      <Filter>PluginObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PluginObjects\wavetables\new_sound.h">
+      <Filter>PluginObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PluginObjects\wavetables\voice.h">
+      <Filter>PluginObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PluginObjects\wavetabledata.h">
+      <Filter>PluginObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PluginObjects\wavetables\violin.h">
+      <Filter>PluginObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PluginObjects\wavetables\oboe.h">
+      <Filter>PluginObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\CustomControls\bankwaveviews.h">
+      <Filter>CustomControls</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PluginObjects\wankelrotor.h">
+      <Filter>PluginObjects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PluginObjects\limiter.h">
       <Filter>PluginObjects</Filter>
     </ClInclude>
   </ItemGroup>

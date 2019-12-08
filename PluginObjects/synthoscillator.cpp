@@ -2,8 +2,6 @@
 //
 #include "synthoscillator.h"
 
-
-
 SynthOsc::SynthOsc(const std::shared_ptr<MidiInputData> _midiInputData, 
 					std::shared_ptr<SynthOscParameters> _parameters, 
 					std::shared_ptr<WaveTableData> _waveTableData)
@@ -17,8 +15,29 @@ SynthOsc::SynthOsc(const std::shared_ptr<MidiInputData> _midiInputData,
 
 	// --- create sub-components
 	wavetableOscillator.reset(new WaveTableOsc(midiInputData, parameters, waveTableData));
+
+	// --- **7**
+	wavetableOscillator->setBankSet(BANK_SET_0);
 }
 
+// --- **7**
+void SynthOsc::setBankSet(uint32_t _bankSet)
+{
+	wavetableOscillator->setBankSet(_bankSet);
+}
+uint32_t SynthOsc::getBankSet()
+{
+	return wavetableOscillator->getBankSet();
+}
+// --- **7**
+std::vector<std::string> SynthOsc::getWaveformNames(uint32_t bankIndex)
+{
+	return wavetableOscillator->getWaveformNames(bankIndex);
+}
+std::vector<std::string> SynthOsc::getBankNames()
+{
+	return wavetableOscillator->getBankNames();
+}
 SynthOsc::~SynthOsc()
 {
 
@@ -50,11 +69,6 @@ bool SynthOsc::doNoteOff(double midiPitch, uint32_t _midiNoteNumber, uint32_t mi
 	wavetableOscillator->doNoteOff(midiPitch, _midiNoteNumber, midiNoteVelocity);
 
 	return true;
-}
-
-std::vector<std::string> SynthOsc::getWaveformNames(uint32_t bankIndex)
-{
-	return wavetableOscillator->getWaveformNames(bankIndex);
 }
 
 bool SynthOsc::update(bool updateAllModRoutings)

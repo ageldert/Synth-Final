@@ -10,6 +10,7 @@
 #include "vafilters.h"
 #include "synthlfo.h"
 #include "dca_eg.h"
+#include "wankelrotor.h"
 
 #include <array>
 
@@ -17,23 +18,32 @@
 \enum modSource
 \ingroup SynthStructures
 \brief Enumeration for accessing an array of modulator source (read from here)
-
 */
+
 enum modSource
 {
-	// --- LFOs here
+	// --- LFOs here (could include more types of outputs)
 	kLFO1_Normal,
 	kLFO1_QuadPhase,
+
+	kLFO2_Normal,
+	kLFO2_QuadPhase,
 
 	// --- EGs here
 	kEG1_Normal,	// EG1 = amp EG
 	kEG1_Biased,
+	kEG2_Normal,
+	kEG2_Biased,
 
 	// --- oscillators here
 	kOsc1_Normal, // osc 1 output
 
 	// --- other modulators (e.g. filter output) here
+	kRotor_X,
+	kRotor_Y,
 
+	kJoystickAC,
+	kJoystickBD,
 
 	// --- remain last, will always be the size of modulator array
 	kNumModSources
@@ -47,8 +57,11 @@ enum modSource
 */
 enum modDestination
 {
-	// --- oscillator pitch (add more here)
+	// --- oscillator pitch (add more here)	**** we could have two LFOs both modulating each other
 	kOsc1_fo,
+	kOsc2_fo,
+	kOsc3_fo,
+	kOsc4_fo,
 
 	// --- FILTER (add more here)
 	kFilter1_fc, // Fc
@@ -56,6 +69,15 @@ enum modDestination
 	// --- DCA (add more here)
 	kDCA_EGMod, // EG Input
 	kDCA_AmpMod,// Amp Mod Input
+	kDCA_SampleHoldMod,// Sample and Hold Mod Input
+
+	// --- LFO
+	kLFO1_fo,
+	kLFO2_fo,
+
+	// --- Shape
+	kShapeX,
+	kShapeY,
 
 	// --- remain last, will always be the size of modulator array
 	kNumModDestinations
@@ -88,10 +110,23 @@ struct SynthVoiceParameters
 		voiceUnisonDetune_Cents = params.voiceUnisonDetune_Cents;
 
 		osc1Parameters = params.osc1Parameters;
+		osc2Parameters = params.osc2Parameters;
+		osc3Parameters = params.osc3Parameters;
+		osc4Parameters = params.osc4Parameters;
+
 		dcaParameters = params.dcaParameters;
 
 		lfo1Parameters = params.lfo1Parameters;
+		lfo2Parameters = params.lfo2Parameters;
+
+		rotorParameters = params.rotorParameters;
+
 		ampEGParameters = params.ampEGParameters;
+		EG2Parameters = params.EG2Parameters;
+
+		vectorJSData = params.vectorJSData;
+
+		moogFilterParameters = params.moogFilterParameters;
 
 		return *this;
 	}
@@ -114,15 +149,30 @@ struct SynthVoiceParameters
 	// --- GUI CONTROL INTERFACE -------------------------------- //
 	// --- pitched oscillators
 	std::shared_ptr<SynthOscParameters> osc1Parameters = std::make_shared<SynthOscParameters>();
+	std::shared_ptr<SynthOscParameters> osc2Parameters = std::make_shared<SynthOscParameters>();
+	std::shared_ptr<SynthOscParameters> osc3Parameters = std::make_shared<SynthOscParameters>();
+	std::shared_ptr<SynthOscParameters> osc4Parameters = std::make_shared<SynthOscParameters>();
 
 	// --- LFO oscillators
 	std::shared_ptr<SynthLFOParameters> lfo1Parameters = std::make_shared<SynthLFOParameters>();
+	std::shared_ptr<SynthLFOParameters> lfo2Parameters = std::make_shared<SynthLFOParameters>();
+
+	// --- Rotor
+	std::shared_ptr<WankelRotorParameters> rotorParameters = std::make_shared<WankelRotorParameters>();
 
 	// --- EGs
 	std::shared_ptr<EGParameters> ampEGParameters = std::make_shared<EGParameters>();
+	std::shared_ptr<EGParameters> EG2Parameters = std::make_shared<EGParameters>();
 
 	// --- DCA
 	std::shared_ptr<DCAParameters> dcaParameters = std::make_shared<DCAParameters>();
+
+	// --- filters: **MOOG**
+	std::shared_ptr<MoogFilterParameters> moogFilterParameters = std::make_shared<MoogFilterParameters>();
+
+
+	// --- vector joystick
+	VectorJoystickData vectorJSData;
 };
 
 struct ModSource
@@ -228,6 +278,7 @@ public:
 	//     oscIndex is [0, 31]
 	//     bankIndex is variable; can have as many banks as you want (for now)
 	std::vector<std::string> getWaveformNames(uint32_t bankIndex, uint32_t oscIndex);
+	std::vector<std::string> getBankNames(uint32_t oscIndex);
 
 	// --- local handlers for stealing
 	bool doNoteOn(midiEvent& event);
@@ -289,13 +340,33 @@ protected:
 		// --- wire the source array slots
 		modSourceData[kLFO1_Normal] = &lfo1Output.modulationOutputs[kLFONormalOutput];
 		modSourceData[kLFO1_QuadPhase] = &lfo1Output.modulationOutputs[kLFOQuadPhaseOutput];
+		modSourceData[kLFO2_Normal] = &lfo2Output.modulationOutputs[kLFONormalOutput];
+		modSourceData[kLFO2_QuadPhase] = &lfo2Output.modulationOutputs[kLFOQuadPhaseOutput];
 		modSourceData[kEG1_Normal] = &ampEGOutput.modulationOutputs[kEGNormalOutput];
 		modSourceData[kEG1_Biased] = &ampEGOutput.modulationOutputs[kEGBiasedOutput];
+		modSourceData[kEG2_Normal] = &EG2Output.modulationOutputs[kEGNormalOutput];
+		modSourceData[kEG2_Biased] = &EG2Output.modulationOutputs[kEGBiasedOutput];
+		modSourceData[kRotor_X] = &rotorOutput.modulationOutputs[0];
+		modSourceData[kRotor_Y] = &rotorOutput.modulationOutputs[1];
+		modSourceData[kJoystickAC] = &parameters->vectorJSData.vectorACMix;
+		modSourceData[kJoystickBD] = &parameters->vectorJSData.vectorBDMix;
 
 		// --- destinations
 		modDestinationData[kOsc1_fo] = &(osc1->getModulators()->modulationInputs[kBipolarMod]);
+		modDestinationData[kOsc2_fo] = &(osc2->getModulators()->modulationInputs[kBipolarMod]);
+		modDestinationData[kOsc3_fo] = &(osc3->getModulators()->modulationInputs[kBipolarMod]);
+		modDestinationData[kOsc4_fo] = &(osc4->getModulators()->modulationInputs[kBipolarMod]);
+		modDestinationData[kLFO1_fo] = &(lfo1->getModulators()->modulationInputs[kFrequencyMod]);
+		modDestinationData[kLFO2_fo] = &(lfo2->getModulators()->modulationInputs[kFrequencyMod]);
 		modDestinationData[kDCA_EGMod] = &(dca->getModulators()->modulationInputs[kEGMod]);
 		modDestinationData[kDCA_AmpMod] = &(dca->getModulators()->modulationInputs[kMaxDownAmpMod]);
+		modDestinationData[kShapeX] = &(dca->getModulators()->modulationInputs[kAuxBipolarMod_1]);
+		modDestinationData[kShapeY] = &(dca->getModulators()->modulationInputs[kAuxBipolarMod_1]);
+
+		// --- filter cutoff is a destination...
+		modDestinationData[kFilter1_fc] = &(moogFilter->getModulators()->modulationInputs[kBipolarMod]);
+
+		modDestinationData[kDCA_SampleHoldMod] = &(dca->getModulators()->modulationInputs[kAuxBipolarMod_1]);	// Modulating using with DCA sample and hold
 	}
 
 	// --- arrays to hold source/destination
@@ -304,13 +375,19 @@ protected:
 
 	// --- mod source data: --- modulators ---
 	ModOutputData lfo1Output;
+	ModOutputData lfo2Output;
+	ModOutputData rotorOutput;
 	ModOutputData ampEGOutput;
+	ModOutputData EG2Output;
 
 	// --- mod source data: --- filter ---
 	// --- ModOutputData filterEGOutput;
 
 	// --- mod source data: --- oscillators ---
 	OscillatorOutputData osc1Output;
+	OscillatorOutputData osc2Output;
+	OscillatorOutputData osc3Output;
+	OscillatorOutputData osc4Output;
 	// --------------------------------------------------
 	
 	// --- per-voice stuff
@@ -323,15 +400,25 @@ protected:
 
 	// --- smart pointers to the oscillator objects
 	std::unique_ptr<SynthOsc> osc1;
+	std::unique_ptr<SynthOsc> osc2;
+	std::unique_ptr<SynthOsc> osc3;
+	std::unique_ptr<SynthOsc> osc4;
 
 	// --- filters:
-	// add here....
+	std::unique_ptr<MoogFilter> moogFilter;
 
 	// --- LFOs
 	std::unique_ptr<SynthLFO> lfo1;
+	std::unique_ptr<SynthLFO> lfo2;
+	std::unique_ptr<WankelRotor> rotor;
+	
+	// NOTE: smart pointer means only ONE thing can hold the pointer to that object. Once no instance of the pointer exists, it deletes itself
+	// Uses overloaded equals to know when an = is being used to copy, so it knows how many times it has been copied
+	// smart pointers are used the same via -> (overloaded -> operator)
 
 	// --- EGs
 	std::unique_ptr<EnvelopeGenerator> ampEG;
+	std::unique_ptr<EnvelopeGenerator> EG2;
 
 	// --- DCA(s)
 	std::unique_ptr<DCA> dca;
@@ -370,7 +457,7 @@ protected:
 };
 
 // --- engine mode: poly, mono or unison
-enum class synthMode { kPoly, kMono, kUnison };
+enum class SynthMode { kPoly, kMono, kUnison };
 
 /**
 \struct SynthEngineParameters
@@ -411,7 +498,7 @@ struct SynthEngineParameters
 	bool enableMIDINoteEvents = true;
 
 	// --- global synth mode
-	synthMode mode = synthMode::kMono;// kPoly;
+	SynthMode mode = SynthMode::kMono;	// kPoly;
 
 	// --- global master volume control, controls each output DCA's master volume
 	double masterVolume_dB = 0.0;
@@ -496,6 +583,15 @@ Outputs: contains 2 outputs
 - Left Channel
 - Right Channel
 
+So we have:
+
+mono->voice[0];
+
+unison using an odd # voices (ex. 0, +, -)
+with unison, pick 3 voices and set detunes and pans
+
+
+
 Control I/F:
 Use SynthEngineModifiers structure; note that it's SynthVoiceModifiers pointer is shared across all voices
 
@@ -533,6 +629,9 @@ public:
 	// --- helpers for populating oscillator waveform GUI controls
 	//     for synths, these are usually the only dynamic items like this
 	std::vector<std::string> getOscWaveformNames(uint32_t voiceIndex, uint32_t bankIndex, uint32_t oscillatorIndex);
+
+	// --- get the bank names
+	std::vector<std::string> getBankNames(uint32_t voiceIndex, uint32_t oscillatorIndex);
 
 protected:
 	// --- our outputs, same number as synth voice!

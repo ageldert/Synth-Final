@@ -213,6 +213,7 @@
     <ClCompile Include="..\PluginObjects\synthlfo.cpp" />
     <ClCompile Include="..\PluginObjects\synthoscillator.cpp" />
     <ClCompile Include="..\PluginObjects\vafilters.cpp" />
+    <ClCompile Include="..\PluginObjects\wankelrotor.cpp" />
     <ClCompile Include="..\PluginObjects\wavedata.cpp" />
     <ClCompile Include="..\PluginObjects\wavetableoscillator.cpp" />
     <ClCompile Include="..\PluginObjects\window_eg.cpp" />
@@ -222,6 +223,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\CustomControls\atomicops.h" />
+    <ClInclude Include="..\CustomControls\bankwaveviews.h" />
     <ClInclude Include="..\CustomControls\customcontrols.h" />
     <ClInclude Include="..\CustomControls\readerwriterqueue.h" />
     <ClInclude Include="..\CustomControls\customviews.h" />
@@ -237,15 +239,24 @@
     <ClInclude Include="..\PluginObjects\dca_eg.h" />
     <ClInclude Include="..\PluginObjects\fxobjects.h" />
     <ClInclude Include="..\PluginObjects\filters.h" />
+    <ClInclude Include="..\PluginObjects\limiter.h" />
     <ClInclude Include="..\PluginObjects\synthcore.h" />
     <ClInclude Include="..\PluginObjects\synthdefs.h" />
     <ClInclude Include="..\PluginObjects\synthlfo.h" />
     <ClInclude Include="..\PluginObjects\synthoscillator.h" />
     <ClInclude Include="..\PluginObjects\trace.h" />
     <ClInclude Include="..\PluginObjects\vafilters.h" />
+    <ClInclude Include="..\PluginObjects\wankelrotor.h" />
     <ClInclude Include="..\PluginObjects\wavedata.h" />
     <ClInclude Include="..\PluginObjects\wavetable.h" />
+    <ClInclude Include="..\PluginObjects\wavetablebank.h" />
+    <ClInclude Include="..\PluginObjects\wavetabledata.h" />
     <ClInclude Include="..\PluginObjects\wavetableoscillator.h" />
+    <ClInclude Include="..\PluginObjects\wavetables\e_organ.h" />
+    <ClInclude Include="..\PluginObjects\wavetables\new_sound.h" />
+    <ClInclude Include="..\PluginObjects\wavetables\oboe.h" />
+    <ClInclude Include="..\PluginObjects\wavetables\violin.h" />
+    <ClInclude Include="..\PluginObjects\wavetables\voice.h" />
     <ClInclude Include="..\PluginObjects\window_eg.h" />
     <ClInclude Include="..\RAFX2 Source\RackAFXDLL.h" />
     <ClInclude Include="..\RAFX2 Source\Rafx2Plugin.h" />

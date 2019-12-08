@@ -1564,7 +1564,7 @@ public:
 	/** Get the event count (extra, does not really need to be used) */
 	virtual uint32_t getEventCount() = 0;
 
-	/** Fire off the next <IDI event */
+	/** Fire off the next MIDI event */
 	virtual bool fireMidiEvents(uint32_t uSampleOffset) = 0;
 };
 

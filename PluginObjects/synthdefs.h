@@ -36,6 +36,8 @@ Definitions for synth components.
 
 // --------------------------- DOXYGEN GROUPS --------------------------- //
 
+
+
 const unsigned int MAX_VOICES = 4;			// --- in Debug mode, you may only get 2 or 3 for extreme-synths; in Release mode you will easily get 32, even up to 64 depending on algorithms
 const unsigned int MAX_SYNTH_CHANNELS = 32;	// --- VST3 allows for 22.1, so 32 should cover us
 const unsigned int MAX_OSC_CHANNELS = 32;	// --- VST3 allows for 22.1, so 32 should cover us
@@ -54,6 +56,9 @@ const unsigned int MAX_PROCESSOR_CHANNELS = 32;	// --- VST3 allows for 22.1, so 
 //};
 
 enum class SynthOscMode { kSync, kFreeRun };
+
+// --- engine mode: poly, mono or unison
+//enum class synthMode { kPoly, kMono, kUnison };
 
 // --- for pitch shift lookup rather then power of 2 calcuation
 const unsigned int kPitchShiftTableLength = 16385;
@@ -903,6 +908,33 @@ protected:
 	}
 };
 
+/**
+\struct SlewLimiter
+\ingroup SynthStructures
+\brief A structure the implements a simple 1-pole LPF to use as a slew-limiter
+*/
+struct SlewLimiter
+{
+public:
+	SlewLimiter() {}
+
+	// --- slewing functions
+	void reset() { z1 = 0; }		///< reset the counter
+
+									// --- slew value is:  0 <= slewvalue <= 0.9999
+	void setSlewValue(double _g) { g = _g; }		///< reset the counter
+	double doSlewLimiter(double input)
+	{
+		double output = input*(1.0 - g) + g*z1;
+		z1 = output;
+		return output;
+	}
+
+protected:
+	double g = 0;
+	double z1 = 0.0;
+};
+
 
 /**
 \struct XHoldFader
@@ -1051,6 +1083,9 @@ struct SynthOscParameters
 		enableHardSync = params.enableHardSync;
 		enableFreeRunMode = params.enableFreeRunMode;
 
+		morphModulation = params.morphModulation;
+		pitchMode = params.pitchMode;
+
 		return *this;
 	}
 
@@ -1072,11 +1107,13 @@ struct SynthOscParameters
 	double outputAmplitude = 1.0;		// raw value, NOT dB
 	
 	double oscillatorShape = 0.0;		// [-1, +1]
+	double morphModulation = 0.0;		// [0, +1]
 
 	double hardSyncRatio = 1.0;			// [1, +???]
 	double fmRatio = 1.0;				// [1, +???]
 	bool enableHardSync = false;		// [1, +???]
 	bool enableFreeRunMode = false;		// [1, +???]
+	int pitchMode = 0;
 };
 
 /**
@@ -1126,7 +1163,7 @@ public:
 //     the waveforms can be from ANY kind of synthesis
 //     including morphing types, so there may be far more
 //     tables than just 32, or 32x128 = 4096
-const uint32_t MAX_NUM_OSC_WAVES = 32;
+// const uint32_t MAX_NUM_OSC_WAVES = 32;
 
 // --- map double on to a UINT 64
 inline uint64_t doubleToUint64(double d)
@@ -1145,6 +1182,76 @@ inline double uint64ToDouble(uint64_t u)
 }
 
 // --- for wave table data sources so they can be shared
+class IWaveTable
+{
+public:
+	// --- reset/regenerate wave tables
+	virtual void selectTable(uint32_t midiNoteNumber) = 0;
+
+	virtual double readWaveTable(double readIndex) = 0;
+
+	virtual uint32_t getWaveTableLength() = 0;
+};
+
+// --- informationn for morphing between two tables
+struct MorphTablePair
+{
+	MorphTablePair& operator=(const MorphTablePair& params)
+	{
+		if (this == &params)
+			return *this;
+
+		table_0 = params.table_0;
+		table_1 = params.table_1;
+		table_0_Length = params.table_0_Length;
+		table_1_Length = params.table_1_Length;
+		readIndex_0 = params.readIndex_0;
+		readIndex_1 = params.readIndex_1;
+
+		return *this;
+	}
+
+	// --- wavetable
+	IWaveTable* table_0 = nullptr;
+	IWaveTable* table_1 = nullptr;
+
+	uint32_t table_0_Length = 0;
+	uint32_t table_1_Length = 0;
+
+	double readIndex_0 = 0.0;
+	double readIndex_1 = 0.0;
+};
+
+
+// --- for wave table data sources so they can be shared
+class IMorphingWaveBank
+{
+public:
+	// --- reset/regenerate wave tables
+	virtual bool resetWaveTables(double sampleRate) = 0;
+
+	// --- select table to read based on MIDI Note number of pitch modulated oscillator
+	virtual MorphTablePair* selectTablePair(int oscillatorWaveformIndex, uint32_t midiNoteNumber) { return nullptr; }// = 0;
+
+	// --- read the selected wavetable and return a double value
+	//     linear interpolation is engaged by default
+	//     Should add Lagrange interpolation (maybe as class project?)
+	virtual double readMorphWaveTable(MorphTablePair* selectedWTPair) = 0;
+
+	// --- get the number of waves for this datasource
+	virtual uint32_t getNumMorphWaves() = 0;
+
+	// --- returns the names of the waveforms, which are identical to the indexes of waveform selection on the GUI
+	//     If there is no waveform, returns "" for that
+	virtual std::vector<std::string> getMorphWaveNames() = 0;
+	
+	// --- bank name
+	virtual std::string getMorphWaveBankName() = 0;
+	virtual void setMorphWaveBankName(std::string _bankName) = 0;
+
+};
+
+// --- for wave table data sources so they can be shared
 class IWaveBank
 {
 public:
@@ -1152,25 +1259,26 @@ public:
 	virtual bool resetWaveTables(double sampleRate) = 0;
 
 	// --- select table to read based on MIDI Note number of pitch modulated oscillator
-	virtual uint32_t selectTable(int oscillatorWaveformIndex, uint32_t midiNoteNumber) = 0;
+	virtual IWaveTable* selectTable(int oscillatorWaveformIndex, uint32_t midiNoteNumber, uint32_t& tableLen) = 0;
 
 	// --- read the selected wavetable and return a double value
 	//     linear interpolation is engaged by default
 	//     Should add Lagrange interpolation (maybe as class project?)
-	virtual double readWaveTable(double readIndex) = 0;
+	virtual double readWaveTable(IWaveTable* selectedWT, double readIndex) = 0;
 
-	// --- get the number of waves for this datasource, must be <= MAX_NUM_OSC_WAVES = 32
+	// --- get the number of waves for this datasource
 	virtual uint32_t getNumWaveforms() = 0;
 
 	// --- returns the names of the waveforms, which are identical to the indexes of waveform selection on the GUI
 	//     If there is no waveform, returns "" for that
 	virtual std::vector<std::string> getWaveformNames() = 0;
-	
+
 	// --- bank name
 	virtual std::string getWaveBankName() = 0;
 	virtual void setWaveBankName(std::string _bankName) = 0;
 
 };
+
 
 
 // --- stores N sets of IWaveBanks 
@@ -1183,28 +1291,28 @@ public:
 	//     get a safe interface pointer to a bank
 	virtual IWaveBank* getInterface(uint32_t waveBankIndex) = 0;
 
-	// --- get the number of waves for this datasource, must be <= MAX_NUM_OSC_WAVES = 32
+	// --- get the number of waves for this datasource
 	virtual uint32_t getNumWaveBanks() = 0;
 
 	// --- returns the names of the waveforms, which are identical to the indexes of waveform selection on the GUI
 	//     If there is no waveform, returns "" for that
-	virtual std::vector<std::string> getWaveBankNames() = 0;
+	virtual std::vector<std::string> getWaveBankNames(uint32_t bankSet = 0) = 0;
 };
 
-
-// --- for wave table data sources so they can be shared
-//     NOTE: do not document this yet, it is going to change
-class IMorphingWaveBank
-{
-public:
-	virtual void addMorphingTable(const double** morph_0, uint32_t midiNoteNumber) = 0;
-	virtual bool initMorphingTables() = 0;
-
-	virtual const double** selectMorphingTableSet(uint32_t& midiNoteNumber) = 0;
-
-	virtual uint32_t getTableLength() = 0;
-	virtual uint32_t getMorphingTableCount() = 0;
-};
+//
+//// --- for wave table data sources so they can be shared
+////     NOTE: do not document this yet, it is going to change
+//class IMorphingWaveBank
+//{
+//public:
+//	virtual void addMorphingTable(const double** morph_0, uint32_t midiNoteNumber) = 0;
+//	virtual bool initMorphingTables() = 0;
+//
+//	virtual const double** selectMorphingTableSet(uint32_t& midiNoteNumber) = 0;
+//
+//	virtual uint32_t getTableLength() = 0;
+//	virtual uint32_t getMorphingTableCount() = 0;
+//};
 
 // --- for wave sample data sources so they can be shared
 class WaveData;
@@ -1258,13 +1366,19 @@ class ISynthModulator
 	virtual const ModOutputData renderModulatorOutput() = 0;
 };
 
+// --- **7**
 class ISynthOscillator
 {
 	// --- reset()
 	//     Sample rate may or may not be required, but usually is
 	virtual bool reset(double _sampleRate) = 0;
 	virtual bool update(bool updateAllModRoutings = true) = 0;
+
+	// --- banks
 	virtual std::vector<std::string> getWaveformNames(uint32_t bankIndex) = 0;
+	virtual std::vector<std::string> getBankNames() = 0;
+	virtual void setBankSet(uint32_t _bankSet) { }
+	virtual uint32_t getBankSet() { return 0; }
 
 	// --- note event handlers
 	virtual bool doNoteOn(double midiPitch, uint32_t midiNoteNumber, uint32_t midiNoteVelocity) = 0;
@@ -1296,31 +1410,16 @@ class ISynthProcessor
 	virtual bool doNoteOn(double midiPitch, uint32_t midiNoteNumber, uint32_t midiNoteVelocity) = 0;
 	virtual bool doNoteOff(double midiPitch, uint32_t midiNoteNumber, uint32_t midiNoteVelocity) = 0;
 
-	// --- process one sample in and out
-	virtual double processAudioSample(double xn) = 0;
-
-	// --- return true if the derived object can process a frame, false otherwise
-	virtual bool canProcessAudioFrame() = 0;
-
 	// --- switch to enable.disable the aux input
 	virtual void enableAuxInput(bool enableAuxInput) {}
+
+	// --- the process function; note that synth voices can have up to 32 channels of output
+	//     so we use a new structure here rather than the older frame processing
+	virtual bool processSynthAudio(SynthProcessorData* audioData) = 0;
 
 	// --- for processing objects with a sidechain input or other necessary aux input
 	//     the return value is optional and will depend on the subclassed object
 	virtual double processAuxInputAudioSample(double xn) { return xn; }
-
-	// --- optional processing function
-	//     e.g. does not make sense for some objects to implement this
-	//          such as inherently mono objects like Biquad
-	//          BUT a processor that must use both left and right channels (ping-pong delay) would need it
-	virtual bool processAudioFrame(const float* inputFrame,		/* ptr to one frame of data: pInputFrame[0] = left, pInputFrame[1] = right, etc...*/
-		float* outputFrame,
-		uint32_t inputChannels,
-		uint32_t outputChannels)
-	{
-		// --- do nothing
-		return false; // NOT handled
-	}
 
 	// --- access to modulators
 	virtual std::shared_ptr<ModInputData> getModulators() = 0;

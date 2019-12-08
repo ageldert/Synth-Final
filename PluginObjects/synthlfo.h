@@ -87,6 +87,9 @@ struct SynthLFOParameters
 		delay_mSec = params.delay_mSec;
 		rampTime_mSec = params.rampTime_mSec;
 
+		shape = params.shape;
+		shapey = params.shapey;
+
 		return *this;
 	}
 
@@ -98,6 +101,8 @@ struct SynthLFOParameters
 	double outputAmplitude = 1.0;
 	double delay_mSec = 0.0;
 	double rampTime_mSec = 0.0;
+	double shape = 0.5;
+	double shapey = 0.5;
 };
 
 
@@ -135,11 +140,13 @@ public:
 	virtual bool reset(double _sampleRate)
 	{
 		sampleRate = _sampleRate;
-		phaseInc = parameters->frequency_Hz / sampleRate;
+		phaseInc1 = parameters->frequency_Hz / sampleRate;
+		phaseInc2 = parameters->frequency_Hz / sampleRate;
 
 		// --- timebase variables
 		modCounter = 0.0;			///< modulo counter [0.0, +1.0]
 		modCounterQP = 0.25;		///<Quad Phase modulo counter [0.0, +1.0]
+		shape = 0.5;
 
 		lfo1_timer.resetTimer();
 
@@ -201,11 +208,14 @@ protected:
 
 	// --- timebase variables
 	double modCounter = 0.0;			///< modulo counter [0.0, +1.0]
-	double phaseInc = 0.0;				///< phase inc = fo/fs
+	double phaseInc1 = 0.0;				///< phaseInc1 = (fo/fs) / (2*shape);
+	double phaseInc2 = 0.0;				///< phaseInc2 = (fo/fs) / (2*(1-shape));
 	double modCounterQP = 0.25;			///< Quad Phase modulo counter [0.0, +1.0]
 	bool renderComplete = false;		///< flag for one-shot
 	double rampAmp = 1.0;				///< amplitude of LFO1
 	double rampInc = 0.0;				///< increment based on rampTime_mSec
+	double shape = 0.5;
+	double shapey = 0.5;
 
 	// --- 32-bit register for RS&H
 	uint32_t pnRegister = 0;			///< 32 bit register for PN oscillator

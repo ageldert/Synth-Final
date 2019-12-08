@@ -54,11 +54,16 @@ bool DCA::update(bool updateAllModRoutings)
 	else
 		gainRaw = 0.0; // OFF
 
+	// --- sample and hold modulation: mutes when modulator below 0
+	double sampleHoldMod = modulators->modulationInputs[kAuxBipolarMod_1];
+	if (sampleHoldMod < 0.0)
+		gainRaw = 0.0;
+
 	// --- is mute ON? 0 = OFF, 1 = ON
 	if (parameters->mute) gainRaw = 0.0;
 
 	// --- now process pan modifiers
-	double panTotal = panValue + modulators->modulationInputs[kBipolarMod];
+	double panTotal = panValue +modulators->modulationInputs[kBipolarMod];
 
 	// --- limit in case pan control is biased
 	boundValue(panTotal, -1.0, 1.0);
@@ -152,11 +157,13 @@ bool EnvelopeGenerator::doNoteOff(double midiPitch, uint32_t midiNoteNumber, uin
 	}
 
 	// --- go directly to release state
-	if (envelopeOutput > 0)
-		state = egState::kRelease;
-	else // sustain was already at zero
-		state = egState::kOff;
-
+	if (parameters->egContourType == egType::kADSR || parameters->egContourType == egType::kAHDSR)
+	{
+		if (envelopeOutput > 0)
+			state = egState::kRelease;
+		else // sustain was already at zero
+			state = egState::kOff;
+	}
 	return true; // handled
 }
 
@@ -342,11 +349,8 @@ const ModOutputData EnvelopeGenerator::renderModulatorOutput()
 				envelopeOutput = 1.0;
 				if(parameters->egContourType == egType::kADSR)
 					state = egState::kDecay;	// go to kDecay
-				else if (parameters->egContourType == egType::kAHR)
+				else 
 					state = egState::kHoldOn;	// go to kHoldOn
-				else
-					state = egState::kDecay;	// go to kDecay
-
 				break;
 			}
 			break;
@@ -372,7 +376,7 @@ const ModOutputData EnvelopeGenerator::renderModulatorOutput()
 			// --- check expired
 			if (holdTime_mSec == 0.0 || holdTimer.timerExpired())
 			{
-				if (parameters->egContourType == egType::kAHR)
+				if (parameters->egContourType == egType::kAHR || parameters->egContourType == egType::kAHR_RT)
 					state = egState::kRelease;	// go to kAR_Release
 				else
 					state = egState::kDecay;	// go to next state
@@ -410,6 +414,13 @@ const ModOutputData EnvelopeGenerator::renderModulatorOutput()
 			{
 				envelopeOutput = 0.0;
 
+				if (parameters->egContourType == egType::kAHR_RT)
+				{
+					state = egState::kDelay;
+					delayTimer.resetTimer();
+					break;
+				}
+
 				if(offTime_mSec <= 0.0)
 					state = egState::kOff;			// go to OFF state
 				else
@@ -417,6 +428,7 @@ const ModOutputData EnvelopeGenerator::renderModulatorOutput()
 
 				break;
 			}
+
 			break;
 		}
 		case egState::kShutdown:
@@ -452,7 +464,7 @@ const ModOutputData EnvelopeGenerator::renderModulatorOutput()
 		}
 	}
 
-	// --- load up the outut struct
+	// --- load up the output struct
 	egOutput.modOutputCount = 2;
 	egOutput.modulationOutputs[kEGNormalOutput] = envelopeOutput;
 	egOutput.modulationOutputs[kEGBiasedOutput] = envelopeOutput - sustainLevel;

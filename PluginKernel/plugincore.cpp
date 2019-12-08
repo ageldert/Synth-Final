@@ -12,6 +12,8 @@
 // -----------------------------------------------------------------------------
 #include "plugincore.h"
 #include "plugindescription.h"
+#include "customviews.h"
+#include "bankwaveviews.h"
 
 /**
 \brief PluginCore constructor is launching pad for object initialization
@@ -26,6 +28,8 @@ PluginCore::PluginCore()
 {
     // --- describe the plugin; call the helper to init the static parts you setup in plugindescription.h
     initPluginDescriptors();
+
+	//enum class egType { kADSR, kAHDSR, kAHR };
 
     // --- default I/O combinations
 	// --- for FX plugins
@@ -103,7 +107,7 @@ bool PluginCore::initPluginParameters()
 	addPluginParameter(piParam);
 
 	// --- continuous control: LFO1 Fo
-	piParam = new PluginParameter(controlID::lfo1Frequency_Hz, "LFO1 Fo", "Hz", controlVariableType::kDouble, 0.020000, 30.000000, 0.500000, taper::kVoltOctaveTaper);
+	piParam = new PluginParameter(controlID::lfo1Frequency_Hz, "LFO1 Fo", "Hz", controlVariableType::kDouble, 0.020000, 20.000000, 0.500000, taper::kVoltOctaveTaper);
 	piParam->setParameterSmoothing(false);
 	piParam->setSmoothingTimeMsec(100.00);
 	piParam->setBoundVariable(&lfo1Frequency_Hz, boundVariableType::kDouble);
@@ -121,6 +125,428 @@ bool PluginCore::initPluginParameters()
 	piParam->setParameterSmoothing(false);
 	piParam->setSmoothingTimeMsec(100.00);
 	piParam->setBoundVariable(&lfo1RampTime_mSec, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- discrete control: LFO2 Wave
+	piParam = new PluginParameter(controlID::lfo2Waveform, "LFO2 Wave", "Triangle,Sin,Saw,RSH,QRSH,Noise,QRNoise", "Triangle");
+	piParam->setBoundVariable(&lfo2Waveform, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: LFO2 Mode
+	piParam = new PluginParameter(controlID::lfo2Mode, "LFO2 Mode", "Sync,One Shot,Free Run", "Sync");
+	piParam->setBoundVariable(&lfo2Mode, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- continuous control: LFO2 Fo
+	piParam = new PluginParameter(controlID::lfo2Frequency_Hz, "LFO2 Fo", "Hz", controlVariableType::kDouble, 0.020000, 20.000000, 0.500000, taper::kVoltOctaveTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&lfo2Frequency_Hz, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: LFO2 Amp
+	piParam = new PluginParameter(controlID::lfo2Amp, "LFO2 Amp", "%", controlVariableType::kDouble, 0.000000, 100.000000, 100.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&lfo2Amp, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: LFO2 Shape1
+	piParam = new PluginParameter(controlID::lfo2_shape, "LFO2 Shape1", "", controlVariableType::kDouble, 0.200000, 0.800000, 0.500000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&lfo2_shape, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: LFO2 Shape2
+	piParam = new PluginParameter(controlID::lfo2_shapeY, "LFO2 Shape2", "", controlVariableType::kDouble, 0.200000, 0.800000, 0.500000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&lfo2_shapeY, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- discrete control: Pitch Mode
+	piParam = new PluginParameter(controlID::lfo1_pitchMode, "Pitch Mode", "None,Ionian,Dorian,Phrygian,Lydian,Mixolydian,Aeolian,Locrian", "None");
+	piParam->setBoundVariable(&lfo1_pitchMode, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: Osc1 Wave
+	piParam = new PluginParameter(controlID::osc1_waveForm, "Osc1 Wave", "wv0,wv1,wv2,wv3,wv4,wv5,wv6,wv7,wv8,wv9,wv10,wv11,wv12,wv13,wv14,wv15,wv16,wv17,wv18,wv19,wv20,wv21,wv22,wv23,wv24,wv25,wv26,wv27,wv28,wv29,wv30,wv31", "wv0");
+	piParam->setBoundVariable(&osc1_waveForm, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: Osc1 Bank
+	piParam = new PluginParameter(controlID::osc1_BankIndex, "Osc1 Bank", "wv bank0,wv bank1,wv bank2,wv bank3", "wv bank0");
+	piParam->setBoundVariable(&osc1_BankIndex, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: Osc2 Wave
+	piParam = new PluginParameter(controlID::osc2_waveForm, "Osc2 Wave", "wv0,wv1,wv2,wv3,wv4,wv5,wv6,wv7,wv8,wv9,wv10,wv11,wv12,wv13,wv14,wv15,wv16,wv17,wv18,wv19,wv20,wv21,wv22,wv23,wv24,wv25,wv26,wv27,wv28,wv29,wv30,wv31", "wv1");
+	piParam->setBoundVariable(&osc2_waveForm, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: Osc2 Bank
+	piParam = new PluginParameter(controlID::osc2_BankIndex, "Osc2 Bank", "wv bank0,wv bank1,wv bank2,wv bank3", "wv bank1");
+	piParam->setBoundVariable(&osc2_BankIndex, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: Osc3 Bank
+	piParam = new PluginParameter(controlID::osc3_BankIndex, "Osc3 Bank", "wv bank0,wv bank1,wv bank2,wv bank3", "wv bank0");
+	piParam->setBoundVariable(&osc3_BankIndex, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: Osc4 Bank
+	piParam = new PluginParameter(controlID::osc4_BankIndex, "Osc4 Bank", "wv bank0,wv bank1,wv bank2,wv bank3", "wv bank1");
+	piParam->setBoundVariable(&osc4_BankIndex, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: Osc3 Wave
+	piParam = new PluginParameter(controlID::osc3_waveForm, "Osc3 Wave", "wv0,wv1,wv2,wv3,wv4,wv5,wv6,wv7,wv8,wv9,wv10,wv11,wv12,wv13,wv14,wv15,wv16,wv17,wv18,wv19,wv20,wv21,wv22,wv23,wv24,wv25,wv26,wv27,wv28,wv29,wv30,wv31", "wv2");
+	piParam->setBoundVariable(&osc3_waveForm, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: Osc4 Wave
+	piParam = new PluginParameter(controlID::osc4_waveForm, "Osc4 Wave", "wv0,wv1,wv2,wv3,wv4,wv5,wv6,wv7,wv8,wv9,wv10,wv11,wv12,wv13,wv14,wv15,wv16,wv17,wv18,wv19,wv20,wv21,wv22,wv23,wv24,wv25,wv26,wv27,wv28,wv29,wv30,wv31", "wv3");
+	piParam->setBoundVariable(&osc4_waveForm, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- continuous control: Detune Osc1
+	piParam = new PluginParameter(controlID::osc1_detune, "Detune Osc1", "cents", controlVariableType::kDouble, -100.000000, 100.000000, 0.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&osc1_detune, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: Detune Osc2
+	piParam = new PluginParameter(controlID::osc2_detune, "Detune Osc2", "cents", controlVariableType::kDouble, -100.000000, 100.000000, 0.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&osc2_detune, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: Rotor Shape
+	piParam = new PluginParameter(controlID::rotorShape, "Rotor Shape", "", controlVariableType::kDouble, 0.000000, 1.000000, 0.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&rotorShape, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- discrete control: Rotor Mode
+	piParam = new PluginParameter(controlID::rotorMode, "Rotor Mode", "Disabled,Elliptical,Noise", "Disabled");
+	piParam->setBoundVariable(&rotorMode, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- continuous control: Rotor Freq
+	piParam = new PluginParameter(controlID::rotorFreq, "Rotor Freq", "hZ", controlVariableType::kDouble, 0.010000, 10.000000, 0.010000, taper::kVoltOctaveTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&rotorFreq, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: EG1 Attack
+	piParam = new PluginParameter(controlID::eg1AttackTime_mSec, "EG1 Attack", "ms", controlVariableType::kDouble, 0.000000, 1000.000000, 5.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&eg1AttackTime_mSec, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: EG1 Decay
+	piParam = new PluginParameter(controlID::eg1DecayTime_mSec, "EG1 Decay", "ms", controlVariableType::kDouble, 0.000000, 5000.000000, 100.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&eg1DecayTime_mSec, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: EG1 Sustain
+	piParam = new PluginParameter(controlID::eg1SustainLevel, "EG1 Sustain", "", controlVariableType::kDouble, 0.000000, 1.000000, 0.707000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&eg1SustainLevel, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: EG1 Release
+	piParam = new PluginParameter(controlID::eg1ReleaseTime_mSec, "EG1 Release", "ms", controlVariableType::kDouble, 0.000000, 10000.000000, 500.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&eg1ReleaseTime_mSec, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: EG1 Delay
+	piParam = new PluginParameter(controlID::eg1DelayTime_mSec, "EG1 Delay", "ms", controlVariableType::kDouble, 0.000000, 1000.000000, 0.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&eg1DelayTime_mSec, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: EG1 Hold
+	piParam = new PluginParameter(controlID::eg1HoldTime_mSec, "EG1 Hold", "ms", controlVariableType::kDouble, 0.000000, 3000.000000, 0.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&eg1HoldTime_mSec, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- discrete control: EG1 Mode
+	piParam = new PluginParameter(controlID::eg1Mode, "EG1 Mode", "ADSR,AHDSR,AHR,AHR RT", "ADSR");
+	piParam->setBoundVariable(&eg1Mode, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: EG1 Retrigger
+	piParam = new PluginParameter(controlID::eg1_retrigger, "EG1 Retrigger", "SWITCH OFF,SWITCH ON", "SWITCH OFF");
+	piParam->setBoundVariable(&eg1_retrigger, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: EG1 Attack Zero
+	piParam = new PluginParameter(controlID::eg1_attackFromZero, "EG1 Attack Zero", "SWITCH OFF,SWITCH ON", "SWITCH OFF");
+	piParam->setBoundVariable(&eg1_attackFromZero, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- continuous control: Filter 1 Fc
+	piParam = new PluginParameter(controlID::filter1_fc, "Filter 1 Fc", "Hz", controlVariableType::kDouble, 20.000000, 18000.000000, 880.000000, taper::kVoltOctaveTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&filter1_fc, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: Filter 1 Q
+	piParam = new PluginParameter(controlID::filter1_q, "Filter 1 Q", "", controlVariableType::kDouble, 1.000000, 10.000000, 1.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&filter1_q, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: EG2 Attack
+	piParam = new PluginParameter(controlID::eg2AttackTime_mSec, "EG2 Attack", "ms", controlVariableType::kDouble, 0.000000, 1000.000000, 5.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&eg2AttackTime_mSec, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: EG2 Decay
+	piParam = new PluginParameter(controlID::eg2DecayTime_mSec, "EG2 Decay", "ms", controlVariableType::kDouble, 0.000000, 5000.000000, 100.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&eg2DecayTime_mSec, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: EG2 Sustain
+	piParam = new PluginParameter(controlID::eg2SustainLevel, "EG2 Sustain", "", controlVariableType::kDouble, 0.000000, 1.000000, 0.707000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&eg2SustainLevel, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: EG2 Release
+	piParam = new PluginParameter(controlID::eg2ReleaseTime_mSec, "EG2 Release", "ms", controlVariableType::kDouble, 0.000000, 10000.000000, 500.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&eg2ReleaseTime_mSec, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: EG1 Int
+	piParam = new PluginParameter(controlID::eg1_sourceInt, "EG1 Int", "", controlVariableType::kDouble, -1.000000, 1.000000, 1.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&eg1_sourceInt, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: EG2 Int
+	piParam = new PluginParameter(controlID::eg2_sourceInt, "EG2 Int", "", controlVariableType::kDouble, -1.000000, 1.000000, 1.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&eg2_sourceInt, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: LFO1 Int
+	piParam = new PluginParameter(controlID::lfo1_sourceInt, "LFO1 Int", "", controlVariableType::kDouble, -1.000000, 1.000000, 0.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&lfo1_sourceInt, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: LFO2 Int
+	piParam = new PluginParameter(controlID::lfo2_sourceInt, "LFO2 Int", "", controlVariableType::kDouble, -1.000000, 1.000000, 0.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&lfo2_sourceInt, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: Osc1 fo Int
+	piParam = new PluginParameter(controlID::osc1_fo_destInt, "Osc1 fo Int", "", controlVariableType::kDouble, -1.000000, 1.000000, 0.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&osc1_fo_destInt, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: Osc2 fo Int
+	piParam = new PluginParameter(controlID::osc2_fo_destInt, "Osc2 fo Int", "", controlVariableType::kDouble, -1.000000, 1.000000, 0.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&osc2_fo_destInt, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: Filt1 fo Int
+	piParam = new PluginParameter(controlID::filt1_fo_destInt, "Filt1 fo Int", "", controlVariableType::kDouble, -1.000000, 1.000000, 0.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&filt1_fo_destInt, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: LFO1 ShpX Int
+	piParam = new PluginParameter(controlID::lfo1_X_destInt, "LFO1 ShpX Int", "", controlVariableType::kDouble, -1.000000, 1.000000, 0.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&lfo1_X_destInt, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- discrete control: EG1
+	piParam = new PluginParameter(controlID::r1c1, "EG1", "SWITCH OFF,SWITCH ON", "SWITCH OFF");
+	piParam->setBoundVariable(&r1c1, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: EG1
+	piParam = new PluginParameter(controlID::r1c2, "EG1", "SWITCH OFF,SWITCH ON", "SWITCH OFF");
+	piParam->setBoundVariable(&r1c2, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: EG1
+	piParam = new PluginParameter(controlID::r1c3, "EG1", "SWITCH OFF,SWITCH ON", "SWITCH OFF");
+	piParam->setBoundVariable(&r1c3, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: EG1
+	piParam = new PluginParameter(controlID::r1c4, "EG1", "SWITCH OFF,SWITCH ON", "SWITCH OFF");
+	piParam->setBoundVariable(&r1c4, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: EG2
+	piParam = new PluginParameter(controlID::r2c1, "EG2", "SWITCH OFF,SWITCH ON", "SWITCH OFF");
+	piParam->setBoundVariable(&r2c1, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: EG2
+	piParam = new PluginParameter(controlID::r2c2, "EG2", "SWITCH OFF,SWITCH ON", "SWITCH OFF");
+	piParam->setBoundVariable(&r2c2, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: EG2
+	piParam = new PluginParameter(controlID::r2c3, "EG2", "SWITCH OFF,SWITCH ON", "SWITCH OFF");
+	piParam->setBoundVariable(&r2c3, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: EG2
+	piParam = new PluginParameter(controlID::r2c4, "EG2", "SWITCH OFF,SWITCH ON", "SWITCH OFF");
+	piParam->setBoundVariable(&r2c4, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: LFO1
+	piParam = new PluginParameter(controlID::r3c1, "LFO1", "SWITCH OFF,SWITCH ON", "SWITCH OFF");
+	piParam->setBoundVariable(&r3c1, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: LFO1
+	piParam = new PluginParameter(controlID::r3c2, "LFO1", "SWITCH OFF,SWITCH ON", "SWITCH OFF");
+	piParam->setBoundVariable(&r3c2, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: LFO1
+	piParam = new PluginParameter(controlID::r3c3, "LFO1", "SWITCH OFF,SWITCH ON", "SWITCH OFF");
+	piParam->setBoundVariable(&r3c3, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: LFO1
+	piParam = new PluginParameter(controlID::r3c4, "LFO1", "SWITCH OFF,SWITCH ON", "SWITCH OFF");
+	piParam->setBoundVariable(&r3c4, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: LFO2
+	piParam = new PluginParameter(controlID::r4c1, "LFO2", "SWITCH OFF,SWITCH ON", "SWITCH OFF");
+	piParam->setBoundVariable(&r4c1, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: LFO2
+	piParam = new PluginParameter(controlID::r4c2, "LFO2", "SWITCH OFF,SWITCH ON", "SWITCH OFF");
+	piParam->setBoundVariable(&r4c2, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: LFO2
+	piParam = new PluginParameter(controlID::r4c3, "LFO2", "SWITCH OFF,SWITCH ON", "SWITCH OFF");
+	piParam->setBoundVariable(&r4c3, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: LFO2
+	piParam = new PluginParameter(controlID::r4c4, "LFO2", "SWITCH OFF,SWITCH ON", "SWITCH OFF");
+	piParam->setBoundVariable(&r4c4, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- discrete control: Filter Key Track
+	piParam = new PluginParameter(controlID::filter1_enableKeyTrack, "Filter Key Track", "SWITCH OFF,SWITCH ON", "SWITCH OFF");
+	piParam->setBoundVariable(&filter1_enableKeyTrack, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- continuous control: Key Ratio
+	piParam = new PluginParameter(controlID::filter1_keyTrackRatio, "Key Ratio", "", controlVariableType::kDouble, 0.250000, 4.000000, 1.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&filter1_keyTrackRatio, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: Detune Osc3
+	piParam = new PluginParameter(controlID::osc3_detune, "Detune Osc3", "cents", controlVariableType::kDouble, -100.000000, 100.000000, 0.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&osc3_detune, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- continuous control: Detune Osc4
+	piParam = new PluginParameter(controlID::osc4_detune, "Detune Osc4", "cents", controlVariableType::kDouble, -100.000000, 100.000000, 0.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&osc4_detune, boundVariableType::kDouble);
+	addPluginParameter(piParam);
+
+	// --- discrete control: Synth Mode
+	piParam = new PluginParameter(controlID::synthMode, "Synth Mode", "Poly,Mono,Unison", "Poly");
+	piParam->setBoundVariable(&synthMode, boundVariableType::kInt);
+	piParam->setIsDiscreteSwitch(true);
+	addPluginParameter(piParam);
+
+	// --- continuous control: Unison
+	piParam = new PluginParameter(controlID::unisonDetune_cents, "Unison", "%", controlVariableType::kDouble, 0.000000, 100.000000, 20.000000, taper::kLinearTaper);
+	piParam->setParameterSmoothing(false);
+	piParam->setSmoothingTimeMsec(100.00);
+	piParam->setBoundVariable(&unisonDetune_cents, boundVariableType::kDouble);
 	addPluginParameter(piParam);
 
 	// --- Aux Attributes
@@ -166,6 +592,331 @@ bool PluginCore::initPluginParameters()
 	auxAttribute.reset(auxGUIIdentifier::guiControlData);
 	auxAttribute.setUintAttribute(2147483648);
 	setParamAuxAttribute(controlID::lfo1RampTime_mSec, auxAttribute);
+
+	// --- controlID::lfo2Waveform
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(805306368);
+	setParamAuxAttribute(controlID::lfo2Waveform, auxAttribute);
+
+	// --- controlID::lfo2Mode
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(805306368);
+	setParamAuxAttribute(controlID::lfo2Mode, auxAttribute);
+
+	// --- controlID::lfo2Frequency_Hz
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::lfo2Frequency_Hz, auxAttribute);
+
+	// --- controlID::lfo2Amp
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::lfo2Amp, auxAttribute);
+
+	// --- controlID::lfo2_shape
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::lfo2_shape, auxAttribute);
+
+	// --- controlID::lfo2_shapeY
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::lfo2_shapeY, auxAttribute);
+
+	// --- controlID::lfo1_pitchMode
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(805306368);
+	setParamAuxAttribute(controlID::lfo1_pitchMode, auxAttribute);
+
+	// --- controlID::osc1_waveForm
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(805306368);
+	setParamAuxAttribute(controlID::osc1_waveForm, auxAttribute);
+
+	// --- controlID::osc1_BankIndex
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(805306368);
+	setParamAuxAttribute(controlID::osc1_BankIndex, auxAttribute);
+
+	// --- controlID::osc2_waveForm
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(805306368);
+	setParamAuxAttribute(controlID::osc2_waveForm, auxAttribute);
+
+	// --- controlID::osc2_BankIndex
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(805306368);
+	setParamAuxAttribute(controlID::osc2_BankIndex, auxAttribute);
+
+	// --- controlID::osc3_BankIndex
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(805306368);
+	setParamAuxAttribute(controlID::osc3_BankIndex, auxAttribute);
+
+	// --- controlID::osc4_BankIndex
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(805306368);
+	setParamAuxAttribute(controlID::osc4_BankIndex, auxAttribute);
+
+	// --- controlID::osc3_waveForm
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(805306368);
+	setParamAuxAttribute(controlID::osc3_waveForm, auxAttribute);
+
+	// --- controlID::osc4_waveForm
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(805306368);
+	setParamAuxAttribute(controlID::osc4_waveForm, auxAttribute);
+
+	// --- controlID::osc1_detune
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483658);
+	setParamAuxAttribute(controlID::osc1_detune, auxAttribute);
+
+	// --- controlID::osc2_detune
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483658);
+	setParamAuxAttribute(controlID::osc2_detune, auxAttribute);
+
+	// --- controlID::rotorShape
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::rotorShape, auxAttribute);
+
+	// --- controlID::rotorMode
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(805306368);
+	setParamAuxAttribute(controlID::rotorMode, auxAttribute);
+
+	// --- controlID::rotorFreq
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::rotorFreq, auxAttribute);
+
+	// --- controlID::eg1AttackTime_mSec
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::eg1AttackTime_mSec, auxAttribute);
+
+	// --- controlID::eg1DecayTime_mSec
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::eg1DecayTime_mSec, auxAttribute);
+
+	// --- controlID::eg1SustainLevel
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::eg1SustainLevel, auxAttribute);
+
+	// --- controlID::eg1ReleaseTime_mSec
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::eg1ReleaseTime_mSec, auxAttribute);
+
+	// --- controlID::eg1DelayTime_mSec
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::eg1DelayTime_mSec, auxAttribute);
+
+	// --- controlID::eg1HoldTime_mSec
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::eg1HoldTime_mSec, auxAttribute);
+
+	// --- controlID::eg1Mode
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(805306368);
+	setParamAuxAttribute(controlID::eg1Mode, auxAttribute);
+
+	// --- controlID::eg1_retrigger
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(1610612736);
+	setParamAuxAttribute(controlID::eg1_retrigger, auxAttribute);
+
+	// --- controlID::eg1_attackFromZero
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(1073741824);
+	setParamAuxAttribute(controlID::eg1_attackFromZero, auxAttribute);
+
+	// --- controlID::filter1_fc
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::filter1_fc, auxAttribute);
+
+	// --- controlID::filter1_q
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::filter1_q, auxAttribute);
+
+	// --- controlID::eg2AttackTime_mSec
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::eg2AttackTime_mSec, auxAttribute);
+
+	// --- controlID::eg2DecayTime_mSec
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::eg2DecayTime_mSec, auxAttribute);
+
+	// --- controlID::eg2SustainLevel
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::eg2SustainLevel, auxAttribute);
+
+	// --- controlID::eg2ReleaseTime_mSec
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::eg2ReleaseTime_mSec, auxAttribute);
+
+	// --- controlID::eg1_sourceInt
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::eg1_sourceInt, auxAttribute);
+
+	// --- controlID::eg2_sourceInt
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::eg2_sourceInt, auxAttribute);
+
+	// --- controlID::lfo1_sourceInt
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::lfo1_sourceInt, auxAttribute);
+
+	// --- controlID::lfo2_sourceInt
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::lfo2_sourceInt, auxAttribute);
+
+	// --- controlID::osc1_fo_destInt
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::osc1_fo_destInt, auxAttribute);
+
+	// --- controlID::osc2_fo_destInt
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::osc2_fo_destInt, auxAttribute);
+
+	// --- controlID::filt1_fo_destInt
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::filt1_fo_destInt, auxAttribute);
+
+	// --- controlID::lfo1_X_destInt
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::lfo1_X_destInt, auxAttribute);
+
+	// --- controlID::r1c1
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(1073741827);
+	setParamAuxAttribute(controlID::r1c1, auxAttribute);
+
+	// --- controlID::r1c2
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(1073741827);
+	setParamAuxAttribute(controlID::r1c2, auxAttribute);
+
+	// --- controlID::r1c3
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(1073741827);
+	setParamAuxAttribute(controlID::r1c3, auxAttribute);
+
+	// --- controlID::r1c4
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(1073741827);
+	setParamAuxAttribute(controlID::r1c4, auxAttribute);
+
+	// --- controlID::r2c1
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(1073741827);
+	setParamAuxAttribute(controlID::r2c1, auxAttribute);
+
+	// --- controlID::r2c2
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(1073741827);
+	setParamAuxAttribute(controlID::r2c2, auxAttribute);
+
+	// --- controlID::r2c3
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(1073741827);
+	setParamAuxAttribute(controlID::r2c3, auxAttribute);
+
+	// --- controlID::r2c4
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(1073741827);
+	setParamAuxAttribute(controlID::r2c4, auxAttribute);
+
+	// --- controlID::r3c1
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(1073741827);
+	setParamAuxAttribute(controlID::r3c1, auxAttribute);
+
+	// --- controlID::r3c2
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(1073741827);
+	setParamAuxAttribute(controlID::r3c2, auxAttribute);
+
+	// --- controlID::r3c3
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(1073741827);
+	setParamAuxAttribute(controlID::r3c3, auxAttribute);
+
+	// --- controlID::r3c4
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(1073741827);
+	setParamAuxAttribute(controlID::r3c4, auxAttribute);
+
+	// --- controlID::r4c1
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(1073741827);
+	setParamAuxAttribute(controlID::r4c1, auxAttribute);
+
+	// --- controlID::r4c2
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(1073741827);
+	setParamAuxAttribute(controlID::r4c2, auxAttribute);
+
+	// --- controlID::r4c3
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(1073741827);
+	setParamAuxAttribute(controlID::r4c3, auxAttribute);
+
+	// --- controlID::r4c4
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(1073741827);
+	setParamAuxAttribute(controlID::r4c4, auxAttribute);
+
+	// --- controlID::filter1_enableKeyTrack
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(1073741824);
+	setParamAuxAttribute(controlID::filter1_enableKeyTrack, auxAttribute);
+
+	// --- controlID::filter1_keyTrackRatio
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::filter1_keyTrackRatio, auxAttribute);
+
+	// --- controlID::osc3_detune
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483658);
+	setParamAuxAttribute(controlID::osc3_detune, auxAttribute);
+
+	// --- controlID::osc4_detune
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483658);
+	setParamAuxAttribute(controlID::osc4_detune, auxAttribute);
+
+	// --- controlID::synthMode
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(805306368);
+	setParamAuxAttribute(controlID::synthMode, auxAttribute);
+
+	// --- controlID::unisonDetune_cents
+	auxAttribute.reset(auxGUIIdentifier::guiControlData);
+	auxAttribute.setUintAttribute(2147483648);
+	setParamAuxAttribute(controlID::unisonDetune_cents, auxAttribute);
 
 
 	// **--0xEDA5--**
@@ -256,6 +1007,10 @@ void PluginCore::updateParameters()
 	engineParams.masterTuningCoarse = (int)masterTune;
 	engineParams.masterTuningFine = (int)(100.0*(masterTune - engineParams.masterTuningCoarse)); // --- get fraction and convert to cents (1/100th of a semitone)
 
+	// --- Mode
+	engineParams.mode = convertIntToEnum(synthMode,SynthMode);
+	engineParams.masterUnisonDetune_Cents = unisonDetune_cents;
+
 	// --- Master Volume
 	engineParams.masterVolume_dB = masterVolume_dB;
 
@@ -266,11 +1021,98 @@ void PluginCore::updateParameters()
 	engineParams.voiceParameters->lfo1Parameters->delay_mSec = lfo1DelayTime_mSec;
 	engineParams.voiceParameters->lfo1Parameters->rampTime_mSec = lfo1RampTime_mSec;
 
-   // --- THE update - this trickles all param updates   
+	// --- LFO 2 Parameters
+	engineParams.voiceParameters->lfo2Parameters->frequency_Hz = lfo2Frequency_Hz;
+	engineParams.voiceParameters->lfo2Parameters->waveform = convertIntToEnum(lfo2Waveform, LFOWaveform);
+	engineParams.voiceParameters->lfo2Parameters->mode = convertIntToEnum(lfo2Mode, LFOMode);
+	engineParams.voiceParameters->lfo2Parameters->outputAmplitude = lfo2Amp / 100.0;
+	engineParams.voiceParameters->lfo2Parameters->shape = lfo2_shape;
+	engineParams.voiceParameters->lfo2Parameters->shapey = lfo2_shapeY;
+
+	// --- wavetable oscillator parameters
+	engineParams.voiceParameters->osc1Parameters->oscillatorBankIndex = osc1_BankIndex;
+	engineParams.voiceParameters->osc1Parameters->oscillatorWaveformIndex = osc1_waveForm;
+	engineParams.voiceParameters->osc1Parameters->pitchMode = lfo1_pitchMode;
+	engineParams.voiceParameters->osc1Parameters->detuneCents = osc1_detune;
+
+	engineParams.voiceParameters->osc2Parameters->oscillatorBankIndex = osc2_BankIndex;
+	engineParams.voiceParameters->osc2Parameters->oscillatorWaveformIndex = osc2_waveForm;
+	engineParams.voiceParameters->osc2Parameters->pitchMode = lfo1_pitchMode;
+	engineParams.voiceParameters->osc2Parameters->detuneCents = osc2_detune;
+
+	engineParams.voiceParameters->osc3Parameters->oscillatorBankIndex = osc3_BankIndex;
+	engineParams.voiceParameters->osc3Parameters->oscillatorWaveformIndex = osc3_waveForm;
+	engineParams.voiceParameters->osc3Parameters->pitchMode = lfo1_pitchMode;
+	engineParams.voiceParameters->osc3Parameters->detuneCents = osc3_detune;
+
+	engineParams.voiceParameters->osc4Parameters->oscillatorBankIndex = osc4_BankIndex;
+	engineParams.voiceParameters->osc4Parameters->oscillatorWaveformIndex = osc4_waveForm;
+	engineParams.voiceParameters->osc4Parameters->pitchMode = lfo1_pitchMode;
+	engineParams.voiceParameters->osc4Parameters->detuneCents = osc4_detune;
+
+	// --- Rotor Parameters
+	engineParams.voiceParameters->rotorParameters->mode = rotorMode;
+	engineParams.voiceParameters->rotorParameters->shape = rotorShape;
+	engineParams.voiceParameters->rotorParameters->freq = rotorFreq;
+	engineParams.voiceParameters->rotorParameters->lfo1Parameters->frequency_Hz = rotorFreq;
+	engineParams.voiceParameters->rotorParameters->lfo2Parameters->frequency_Hz = rotorFreq;
+
+	// --- Amp EG Parameters
+	engineParams.voiceParameters->ampEGParameters->delayTime_mSec = eg1DelayTime_mSec;
+	engineParams.voiceParameters->ampEGParameters->attackTime_mSec = eg1AttackTime_mSec;
+	engineParams.voiceParameters->ampEGParameters->holdTime_mSec = eg1HoldTime_mSec;
+	engineParams.voiceParameters->ampEGParameters->decayTime_mSec = eg1DecayTime_mSec;
+	engineParams.voiceParameters->ampEGParameters->sustainLevel = eg1SustainLevel;
+	engineParams.voiceParameters->ampEGParameters->releaseTime_mSec = eg1ReleaseTime_mSec;
+	engineParams.voiceParameters->ampEGParameters->egContourType = convertIntToEnum(eg1Mode, egType);
+	engineParams.voiceParameters->ampEGParameters->resetToZero = eg1_attackFromZero;
+
+	// --- EG2 Parameters
+	engineParams.voiceParameters->EG2Parameters->attackTime_mSec = eg2AttackTime_mSec;
+	engineParams.voiceParameters->EG2Parameters->decayTime_mSec = eg2DecayTime_mSec;
+	engineParams.voiceParameters->EG2Parameters->sustainLevel = eg2SustainLevel;
+	engineParams.voiceParameters->EG2Parameters->releaseTime_mSec = eg2ReleaseTime_mSec;
+
+	// --- Filter Parameters
+	engineParams.voiceParameters->moogFilterParameters->fc = filter1_fc;
+	engineParams.voiceParameters->moogFilterParameters->Q = filter1_q;
+	engineParams.voiceParameters->moogFilterParameters->enableKeyTrack = (filter1_enableKeyTrack == 1);
+	engineParams.voiceParameters->moogFilterParameters->keyTrackRatio = filter1_keyTrackRatio;
+
+	// --- setting MM source intensities
+	engineParams.setMM_SourceMasterIntensity(kEG1_Normal, eg1_sourceInt);
+	engineParams.setMM_SourceMasterIntensity(kEG2_Normal, eg2_sourceInt);
+	engineParams.setMM_SourceMasterIntensity(kLFO1_Normal, lfo1_sourceInt);
+	engineParams.setMM_SourceMasterIntensity(kLFO2_Normal, lfo2_sourceInt);
+
+	// ---- MM switches
+	engineParams.setMM_ChannelEnable(kEG1_Normal, kOsc1_fo, (r1c1 == 1));
+	engineParams.setMM_ChannelEnable(kEG1_Normal, kOsc2_fo, (r1c2 == 1));
+	engineParams.setMM_ChannelEnable(kEG1_Normal, kFilter1_fc, (r1c3 == 1));
+	engineParams.setMM_ChannelEnable(kEG1_Normal, kShapeX, (r1c4 == 1));
+	engineParams.setMM_ChannelEnable(kEG2_Normal, kOsc1_fo, (r2c1 == 1));
+	engineParams.setMM_ChannelEnable(kEG2_Normal, kOsc2_fo, (r2c2 == 1));
+	engineParams.setMM_ChannelEnable(kEG2_Normal, kFilter1_fc, (r2c3 == 1));
+	engineParams.setMM_ChannelEnable(kEG2_Normal, kShapeX, (r2c4 == 1));
+	engineParams.setMM_ChannelEnable(kLFO1_Normal, kOsc1_fo, (r3c1 == 1));
+	engineParams.setMM_ChannelEnable(kLFO1_Normal, kOsc2_fo, (r3c2 == 1));
+	engineParams.setMM_ChannelEnable(kLFO1_Normal, kFilter1_fc, (r3c3 == 1));
+	engineParams.setMM_ChannelEnable(kLFO1_Normal, kShapeX, (r3c4 == 1));
+	engineParams.setMM_ChannelEnable(kLFO2_Normal, kOsc1_fo, (r4c1 == 1));
+	engineParams.setMM_ChannelEnable(kLFO2_Normal, kOsc2_fo, (r4c2 == 1));
+	engineParams.setMM_ChannelEnable(kLFO2_Normal, kFilter1_fc, (r4c3 == 1));
+	engineParams.setMM_ChannelEnable(kLFO2_Normal, kShapeX, (r4c4 == 1));
+
+	// --- setting MM destination intensities
+	engineParams.setMM_DestMasterIntensity(kOsc1_fo, osc1_fo_destInt);
+	engineParams.setMM_DestMasterIntensity(kOsc2_fo, osc2_fo_destInt);
+	engineParams.setMM_DestMasterIntensity(kFilter1_fc, filt1_fo_destInt);
+	engineParams.setMM_DestMasterIntensity(kShapeX, lfo1_X_destInt);
+
+   // --- THE update - this trickles all param updates
    //                  via the setParameters( ) of each  synthEngine.setParameters(engineParams); 
 
 	synthEngine.setParameters(engineParams);
-
 }
 
 /**
@@ -289,9 +1131,12 @@ bool PluginCore::processAudioFrame(ProcessFrameInfo& processFrameInfo)
 {
     // --- fire any MIDI events for this sample interval
     processFrameInfo.midiEventQueue->fireMidiEvents(processFrameInfo.currentFrame);
+	if (eg1_retrigger) processMIDIEvent(lastEvent);
 
 	// --- do per-frame updates; VST automation and parameter smoothing
 	doSampleAccurateParameterUpdates();
+
+	// processFrameInfo.hostInfo->dBPM // oooh something with this
 
     // --- decode the channelIOConfiguration and process accordingly
     //
@@ -488,6 +1333,7 @@ bool PluginCore::guiParameterChanged(int32_t controlID, double actualValue)
 NOTES:
 - this is for advanced users only to implement custom view and custom sub-controllers
 - see the SDK for examples of use
+- function gets called on load/unload, every animation (50 ms), other scenarios
 
 \param messageInfo a structure containing information about the incoming message
 
@@ -501,6 +1347,7 @@ bool PluginCore::processMessage(MessageInfo& messageInfo)
 		// --- add customization appearance here
 	case PLUGINGUI_DIDOPEN:
 	{
+		if (bankAndWaveGroup_0) bankAndWaveGroup_0->updateView();
 		return false;
 	}
 
@@ -524,6 +1371,44 @@ bool PluginCore::processMessage(MessageInfo& messageInfo)
 	}
 
 	case PLUGINGUI_REGISTER_SUBCONTROLLER:
+	{
+		// --- decode name string
+		if (messageInfo.inMessageString.compare("BankWaveController_0") == 0)
+		{
+			// --- (1) get the custom view interface via incoming message data*
+			//         can use it for communication
+			if (bankAndWaveGroup_0 != static_cast<ICustomView*>(messageInfo.inMessageData))
+				bankAndWaveGroup_0 = static_cast<ICustomView*>(messageInfo.inMessageData);
+
+			if (!bankAndWaveGroup_0) return false;
+
+			// --- need to tell the subcontroller the bank names
+			VSTGUI::BankWaveMessage subcontrollerMessage;
+			subcontrollerMessage.message = VSTGUI::UPDATE_BANK_NAMES;
+
+			subcontrollerMessage.bankNames = synthEngine.getBankNames(0, 0); // voice, voice-oscillator 
+			bankAndWaveGroup_0->sendMessage(&subcontrollerMessage);
+
+			// --- now add the wave names for each bank
+			subcontrollerMessage.message = VSTGUI::ADD_BANK_WAVENAMES;
+
+			// --- bank 0
+			subcontrollerMessage.bankIndex = 0;
+			subcontrollerMessage.waveformNames = synthEngine.getOscWaveformNames(0, 0, 0); // voice, voice-oscillator, bank 
+
+			bankAndWaveGroup_0->sendMessage(&subcontrollerMessage);
+
+			// --- bank 1
+			subcontrollerMessage.bankIndex = 1;
+			subcontrollerMessage.waveformNames = synthEngine.getOscWaveformNames(0, 0, 1); // voice,  voice-oscillator, bank 
+
+			bankAndWaveGroup_0->sendMessage(&subcontrollerMessage);
+
+			// --- registered!
+			return true;
+		}
+	}
+
 	case PLUGINGUI_QUERY_HASUSERCUSTOM:
 	case PLUGINGUI_USER_CUSTOMOPEN:
 	case PLUGINGUI_USER_CUSTOMCLOSE:
@@ -556,6 +1441,7 @@ NOTES:
 bool PluginCore::processMIDIEvent(midiEvent& event)
 {
 	synthEngine.processMIDIEvent(event);
+	lastEvent = event;
 	return true;
 }
 
@@ -572,6 +1458,10 @@ NOTES:
 */
 bool PluginCore::setVectorJoystickParameters(const VectorJoystickData& vectorJoysickData)
 {
+	// asynchronous
+	SynthEngineParameters engineParams = synthEngine.getParameters();
+	engineParams.voiceParameters->vectorJSData = vectorJoysickData;
+	synthEngine.setParameters(engineParams);
 	return true;
 }
 
@@ -604,6 +1494,71 @@ bool PluginCore::initPluginPresets()
 	setPresetParameter(preset->presetParameters, controlID::lfo1Frequency_Hz, 0.500000);
 	setPresetParameter(preset->presetParameters, controlID::lfo1DelayTime_mSec, 0.000000);
 	setPresetParameter(preset->presetParameters, controlID::lfo1RampTime_mSec, 0.000000);
+	setPresetParameter(preset->presetParameters, controlID::lfo2Waveform, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::lfo2Mode, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::lfo2Frequency_Hz, 0.500000);
+	setPresetParameter(preset->presetParameters, controlID::lfo2Amp, 100.000000);
+	setPresetParameter(preset->presetParameters, controlID::lfo2_shape, 0.500000);
+	setPresetParameter(preset->presetParameters, controlID::lfo2_shapeY, 0.500000);
+	setPresetParameter(preset->presetParameters, controlID::lfo1_pitchMode, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::osc1_waveForm, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::osc1_BankIndex, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::osc2_waveForm, 1.000000);
+	setPresetParameter(preset->presetParameters, controlID::osc2_BankIndex, 1.000000);
+	setPresetParameter(preset->presetParameters, controlID::osc3_BankIndex, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::osc4_BankIndex, 1.000000);
+	setPresetParameter(preset->presetParameters, controlID::osc3_waveForm, 2.000000);
+	setPresetParameter(preset->presetParameters, controlID::osc4_waveForm, 3.000000);
+	setPresetParameter(preset->presetParameters, controlID::osc1_detune, 0.000000);
+	setPresetParameter(preset->presetParameters, controlID::osc2_detune, 0.000000);
+	setPresetParameter(preset->presetParameters, controlID::rotorShape, 0.000000);
+	setPresetParameter(preset->presetParameters, controlID::rotorMode, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::rotorFreq, 0.010000);
+	setPresetParameter(preset->presetParameters, controlID::eg1AttackTime_mSec, 5.000000);
+	setPresetParameter(preset->presetParameters, controlID::eg1DecayTime_mSec, 100.000000);
+	setPresetParameter(preset->presetParameters, controlID::eg1SustainLevel, 0.707000);
+	setPresetParameter(preset->presetParameters, controlID::eg1ReleaseTime_mSec, 500.000000);
+	setPresetParameter(preset->presetParameters, controlID::eg1DelayTime_mSec, 0.000000);
+	setPresetParameter(preset->presetParameters, controlID::eg1HoldTime_mSec, 0.000000);
+	setPresetParameter(preset->presetParameters, controlID::eg1Mode, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::eg1_retrigger, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::eg1_attackFromZero, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::filter1_fc, 880.000000);
+	setPresetParameter(preset->presetParameters, controlID::filter1_q, 1.000000);
+	setPresetParameter(preset->presetParameters, controlID::eg2AttackTime_mSec, 5.000000);
+	setPresetParameter(preset->presetParameters, controlID::eg2DecayTime_mSec, 100.000000);
+	setPresetParameter(preset->presetParameters, controlID::eg2SustainLevel, 0.707000);
+	setPresetParameter(preset->presetParameters, controlID::eg2ReleaseTime_mSec, 500.000000);
+	setPresetParameter(preset->presetParameters, controlID::eg1_sourceInt, 1.000000);
+	setPresetParameter(preset->presetParameters, controlID::eg2_sourceInt, 1.000000);
+	setPresetParameter(preset->presetParameters, controlID::lfo1_sourceInt, 0.000000);
+	setPresetParameter(preset->presetParameters, controlID::lfo2_sourceInt, 0.000000);
+	setPresetParameter(preset->presetParameters, controlID::osc1_fo_destInt, 0.000000);
+	setPresetParameter(preset->presetParameters, controlID::osc2_fo_destInt, 0.000000);
+	setPresetParameter(preset->presetParameters, controlID::filt1_fo_destInt, 0.000000);
+	setPresetParameter(preset->presetParameters, controlID::lfo1_X_destInt, 0.000000);
+	setPresetParameter(preset->presetParameters, controlID::r1c1, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::r1c2, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::r1c3, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::r1c4, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::r2c1, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::r2c2, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::r2c3, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::r2c4, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::r3c1, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::r3c2, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::r3c3, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::r3c4, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::r4c1, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::r4c2, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::r4c3, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::r4c4, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::filter1_enableKeyTrack, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::filter1_keyTrackRatio, 1.000000);
+	setPresetParameter(preset->presetParameters, controlID::osc3_detune, 0.000000);
+	setPresetParameter(preset->presetParameters, controlID::osc4_detune, 0.000000);
+	setPresetParameter(preset->presetParameters, controlID::synthMode, -0.000000);
+	setPresetParameter(preset->presetParameters, controlID::unisonDetune_cents, 0.000000);
 	addPreset(preset);
 
 

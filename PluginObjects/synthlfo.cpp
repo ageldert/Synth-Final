@@ -11,11 +11,22 @@ bool SynthLFO::update(bool updateAllModRoutings)
 	if (!updateAllModRoutings)
 		return true;
 
-	phaseInc = parameters->frequency_Hz / sampleRate;	///< updates phaseInc to frequency / sample rate
+	double min = 0.02;
+	double max = 20.0;
+	double range = (max - min) / 2.0;
+	double fo = modulators->modulationInputs[kFrequencyMod] * range;
+	fo = fo + parameters->frequency_Hz;
+	boundValue(fo, min, max);
+
+	shape = parameters->shape + modulators->modulationInputs[kAuxBipolarMod_1] / 2.0;
+	shapey = parameters->shapey;
+
+	// phaseInc = fo / sampleRate;	// this is the NORMAL version of phaseInc
+	phaseInc1 = (fo / sampleRate) / (shape * (1 / shapey));
+	phaseInc2 = (fo / sampleRate) / ((1 / (1 - shapey)*(1 - shape)));
 
 	return true;
 }
-
 
 /**
 \ModOutputData renderModulatorOutput()
@@ -49,7 +60,13 @@ const ModOutputData SynthLFO::renderModulatorOutput()
 	}
 
 	// --- always first!
+	
+	double phaseInc;
+	if (modCounter < shapey) phaseInc = phaseInc1;	// use phaseInc1 for first half
+	else phaseInc = phaseInc2;						// use phaseInc2 for second half
+
 	bool bWrapped = checkAndWrapModulo(modCounter, phaseInc);
+
 	if (bWrapped && parameters->mode == LFOMode::kOneShot)
 	{
 		renderComplete = true;
@@ -166,7 +183,7 @@ const ModOutputData SynthLFO::renderModulatorOutput()
 	lfoOutputData.modulationOutputs[kUnipolarOutputFromMin] = lfoOutputData.modulationOutputs[kUnipolarOutputFromMin] - (1.0 - 0.5 - (parameters->outputAmplitude / 2.0));
 
 	// --- setup for next sample period
-	advanceModulo(modCounter, phaseInc);
+	advanceModulo(modCounter, phaseInc);		// phaseInc was set earlier to either phaseInc1 or 2
 
 	return lfoOutputData;
 }
